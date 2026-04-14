@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>廢土生存 2026</title>
+    <style>
+        body { background-color: #000; color: #0f0; font-family: 'Courier New', monospace; text-align: center; padding-top: 50px; }
+        .container { border: 2px solid #0f0; padding: 20px; width: 300px; margin: auto; }
+        button { background: #000; color: #0f0; border: 1px solid #0f0; padding: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>廢土生存</h1>
+        <div id="login-box">
+            <input id="user" placeholder="帳號">
+            <input id="pass" type="password" placeholder="密碼">
+            <button onclick="login()">登入</button>
+        </div>
+        <div id="game-box" style="display:none;">
+            <p>天數: <span id="days">0</span></p>
+            <button onclick="action('scavenge')">搜刮</button>
+            <button onclick="action('rest')">休息</button>
+        </div>
+    </div>
+
+    <script>
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzhBvrnLbp-LoaWZIoE3PYij_aoj1s34xPrUkUj8GRdRs_B_afmftS1XrZx0LrzbgoN/exec"; 
+        let days = 0, user = "";
+
+        async function login() {
+            user = document.getElementById('user').value;
+            const pass = document.getElementById('pass').value;
+            const res = await fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'login', username: user, password: pass })
+            });
+            const data = await res.json();
+            if(data.status === 'success') {
+                document.getElementById('login-box').style.display = 'none';
+                document.getElementById('game-box').style.display = 'block';
+            } else { alert("登入失敗"); }
+        }
+
+        async function action(type) {
+            days++;
+            document.getElementById('days').innerText = days;
+            if(Math.random() < 0.2) { // 20% 機率死亡
+                alert("你死了！天數: " + days);
+                await fetch(GAS_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'saveScore', username: user, daysSurvived: days })
+                });
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html>
