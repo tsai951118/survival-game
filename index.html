@@ -2,80 +2,201 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>代號-亞當 (PROJECT ADAM) - 生存終端</title>
+    <title>代號-亞當 (PROJECT ADAM)</title>
     <style>
-        :root { --main: #00ff41; --bg: #050505; --danger: #ff4444; --warn: #ffbb00; }
-        body { background: var(--bg); color: var(--main); font-family: 'Courier New', monospace; margin: 0; padding: 20px; overflow: hidden; }
-        
-        /* 終端機濾鏡 */
-        body::after { content: " "; position: fixed; top:0; left:0; width:100%; height:100%; background: linear-gradient(rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.2) 50%); background-size: 100% 4px; pointer-events: none; opacity: 0.15; }
+        :root {
+            --main: #00ff41; /* 經典終端綠 */
+            --bg: #050505;
+            --danger: #ff4444;
+            --warn: #ffbb00;
+            --text-shadow: 0 0 5px var(--main);
+            --panel-border: #444;
+        }
 
+        body {
+            background-color: var(--bg);
+            color: var(--main);
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            padding: 20px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            text-shadow: var(--text-shadow);
+        }
+
+        /* --- CRT 螢幕濾鏡與掃描線 (關鍵視覺) --- */
+        body::after {
+            content: " ";
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            /* 橫向掃描線與 RGB 微小色差 */
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.03));
+            background-size: 100% 4px, 3px 100%;
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0.2; /* 掃描線強度 */
+        }
+
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        /* --- 首頁介面 --- */
         #home-screen, #game-ui { position: fixed; width: 100%; height: 100%; top:0; left:0; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        #game-ui { display: none; padding: 20px; box-sizing: border-box; grid-template-columns: 280px 1fr 280px; grid-template-rows: 60px 1fr 120px; gap: 15px; }
+        #home-screen h1 { font-size: 2.5em; animation: blink 2s infinite; text-shadow: 0 0 15px var(--main); }
+
+        /* --- 遊戲主介面 --- */
+        #game-ui { 
+            display: none; 
+            padding: 30px; 
+            box-sizing: border-box; 
+            grid-template-columns: 300px 1fr 300px; 
+            grid-template-rows: 60px 1fr 140px; 
+            gap: 20px; 
+            max-width: 1400px; 
+            height: 90vh;
+            border: 1px solid var(--panel-border);
+            background: rgba(0,0,0,0.8);
+        }
+
+        /* 做舊面板樣式 */
+        .panel { 
+            border: 1px solid var(--panel-border); 
+            padding: 20px; 
+            background: rgba(5, 5, 5, 0.95); 
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 面板裝飾角 (機械感) */
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 10px; height: 10px;
+            border-top: 2px solid var(--main);
+            border-left: 2px solid var(--main);
+        }
+
+        h3 { border-bottom: 1px solid var(--panel-border); padding-bottom: 10px; margin-top: 0; color: #fff; }
+
+        /* --- 按鈕樣式 (優化) --- */
+        button { 
+            background: transparent; 
+            color: var(--main); 
+            border: 1px solid var(--main); 
+            padding: 12px; 
+            margin: 5px 0; 
+            cursor: pointer; 
+            text-transform: uppercase; 
+            width: 100%; 
+            font-family: inherit;
+            font-size: 1em;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+            position: relative;
+        }
+        button:hover { 
+            background: var(--main); 
+            color: var(--bg); 
+            box-shadow: 0 0 15px var(--main);
+            text-shadow: none;
+        }
+        button:active { transform: scale(0.98); }
+
+        /* --- 狀態條與發光效果 --- */
+        .status-bar { height: 12px; background: #111; margin: 5px 0 15px 0; border: 1px solid #333; position: relative; }
+        .fill { 
+            height: 100%; 
+            background-color: var(--main); 
+            transition: width 0.4s ease-in-out; 
+            box-shadow: 0 0 10px var(--main); /* 霓虹光暈 */
+        }
         
-        .panel { border: 1px solid var(--main); padding: 15px; background: rgba(0,0,0,0.9); }
-        button { background: transparent; color: var(--main); border: 1px solid var(--main); padding: 10px; margin: 5px; cursor: pointer; text-transform: uppercase; width: 100%; }
-        button:hover { background: var(--main); color: var(--bg); }
-        
-        .status-bar { height: 10px; background: #222; margin: 5px 0 10px 0; border: 1px solid #333; }
-        .fill { height: 100%; background: var(--main); transition: 0.5s; }
-        #log { height: 350px; overflow-y: auto; border: 1px solid #333; padding: 10px; margin: 10px 0; font-size: 0.9em; }
+        #hp-bar { background-color: var(--danger); box-shadow: 0 0 10px var(--danger); }
+        #hng-bar { background-color: var(--warn); box-shadow: 0 0 10px var(--warn); }
+        #thr-bar { background-color: #4444ff; box-shadow: 0 0 10px #4444ff; }
+
+        /* --- 日誌區域 (自定義捲動條) --- */
+        #log { 
+            height: 350px; 
+            overflow-y: auto; 
+            border: 1px solid #222; 
+            padding: 15px; 
+            margin: 10px 0; 
+            font-size: 0.95em; 
+            text-align: left; 
+            line-height: 1.6;
+        }
+        #log::-webkit-scrollbar { width: 6px; }
+        #log::-webkit-scrollbar-track { background: #050505; }
+        #log::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+        /* 背包視窗 */
+        #backpack-modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); align-items:center; justify-content:center; z-index: 1001; }
     </style>
 </head>
 <body>
 
     <div id="home-screen">
-        <h1 style="text-shadow: 0 0 10px var(--main);">> [ 代號-亞當 : 啟動 ]</h1>
-        <button style="width:300px;" onclick="newGame()">新遊戲 (NEW MISSION)</button>
-        <button style="width:300px;" onclick="showLoadMenu()">讀取存檔 (LOAD DATA)</button>
-        <div id="load-menu" style="display:none; margin-top:20px;">
-            <h3>選擇存檔位：</h3>
+        <h1>> [ 代號-亞當 : 啟動 ]</h1>
+        <button style="width:350px;" onclick="newGame()">新遊戲 (NEW MISSION)</button>
+        <button style="width:350px;" onclick="showLoadMenu()">讀取存檔 (LOAD DATA)</button>
+        <div id="load-menu" style="display:none; margin-top:30px;">
+            <h3>選擇存檔數據：</h3>
             <div id="save-list"></div>
         </div>
     </div>
 
     <div id="game-ui">
         <div class="panel" style="grid-column: 1/4; display:flex; justify-content:space-between; align-items:center;">
-            <div>> 系統: 代號-亞當 | <span id="weather-display">天氣: 晴天</span></div>
-            <div>STATUS: ONLINE</div>
+            <div>> 系統: 代號-亞當 | <span id="weather-display" style="color:var(--warn)">天氣: 晴天</span></div>
+            <div style="font-size:0.8em; opacity:0.7;">SESSION: 2026.11.05</div>
         </div>
+        
         <div class="panel">
             <h3>[ 生理體徵 ]</h3>
             HP: <div class="status-bar"><div id="hp-bar" class="fill" style="width:100%"></div></div>
             飢餓: <div class="status-bar"><div id="hng-bar" class="fill" style="width:100%"></div></div>
             乾渴: <div class="status-bar"><div id="thr-bar" class="fill" style="width:100%"></div></div>
-            <button onclick="showBackpack()">[ 打開背包 ]</button>
+            <button onclick="showBackpack()">[ 開啟背包 ]</button>
         </div>
-        <div class="panel">
-            <h3>[ 環境行動 ]</h3>
+        
+        <div class="panel main-log">
+            <h3>[ 環境行動日誌 ]</h3>
             <div id="log"></div>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 5px;">
-                <button onclick="scavenge('醫院')">醫院</button><button onclick="scavenge('森林')">森林</button>
-                <button onclick="scavenge('超市')">超市</button><button onclick="scavenge('停車場')">停車場</button>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <button onclick="scavenge('醫院')">搜尋醫院</button><button onclick="scavenge('森林')">搜尋森林</button>
+                <button onclick="scavenge('超市')">搜尋超市</button><button onclick="scavenge('停車場')">搜尋停車場</button>
             </div>
         </div>
+        
         <div class="panel">
             <h3>[ 營地管理 ]</h3>
-            <p id="comp-info">無同伴</p>
-            <button onclick="rest()">休息</button>
-            <button onclick="location.reload()">退出系統</button>
+            <p id="comp-info">同伴狀態: 無同伴</p>
+            <button onclick="rest()">營地休息</button>
+            <button onclick="location.reload()" style="border-color:var(--danger); color:var(--danger)">登出系統 (重新載入)</button>
         </div>
     </div>
 
-    <div id="backpack-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); align-items:center; justify-content:center;">
-        <div class="panel" style="width:300px;"><h3>[ 背包物品 ]</h3><div id="inventory-list"></div><button onclick="closeModal()">關閉</button></div>
+    <div id="backpack-modal">
+        <div class="panel" style="width:350px; text-align:center;">
+            <h3>[ 背包物品 ]</h3>
+            <div id="inventory-list" style="margin: 20px 0;"></div>
+            <button onclick="closeModal()">關閉</button>
+        </div>
     </div>
 
     <script>
-        // 你的 GAS 網址已完成設定
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzhBvrnLbp-LoaWZIoE3PYij_aoj1s34xPrUkUj8GRdRs_B_afmftS1XrZx0LrzbgoN/exec"; 
-        
+        // 核心邏輯 (與上一個修復版一致)
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzhBvrnLbp-LoaWZIoE3PYij_aoj1s34xPrUkUj8GRdRs_B_afmftS1XrZx0LrzbgoN/exec";
         let state = {}, currentSaveSlot = null;
 
         function newGame() {
             let saves = JSON.parse(localStorage.getItem('adam_saves') || '[]');
             currentSaveSlot = saves.length;
-            state = { hp: 100, hng: 100, thr: 100, backpack: [], days: 0, weather: '晴天' };
+            state = { hp: 100, hng: 100, thr: 100, backpack: ['罐頭'], weather: '晴天' };
             startGame();
         }
 
@@ -84,7 +205,8 @@
             let saves = JSON.parse(localStorage.getItem('adam_saves') || '[]');
             let list = document.getElementById('save-list'); list.innerHTML = '';
             saves.forEach((data, i) => {
-                let btn = document.createElement('button'); btn.innerText = `存檔 #${i+1}`;
+                let btn = document.createElement('button'); btn.className = "menu-btn";
+                btn.innerText = `存檔 #${i+1}`;
                 btn.onclick = () => { currentSaveSlot = i; state = data; startGame(); };
                 list.appendChild(btn);
             });
@@ -94,6 +216,7 @@
             document.getElementById('home-screen').style.display = 'none';
             document.getElementById('game-ui').style.display = 'grid';
             updateUI();
+            addLog("代號-亞當... 初始化完成。歡迎回來。");
         }
 
         function saveGame() {
@@ -103,32 +226,41 @@
         }
 
         function updateUI() {
-            document.getElementById('hp-bar').style.width = Math.min(100, state.hp) + '%';
-            document.getElementById('hng-bar').style.width = Math.min(100, state.hng) + '%';
-            document.getElementById('thr-bar').style.width = Math.min(100, state.thr) + '%';
+            document.getElementById('hp-bar').style.width = Math.max(0, Math.min(100, state.hp)) + '%';
+            document.getElementById('hng-bar').style.width = Math.max(0, Math.min(100, state.hng)) + '%';
+            document.getElementById('thr-bar').style.width = Math.max(0, Math.min(100, state.thr)) + '%';
             document.getElementById('weather-display').innerText = `天氣: ${state.weather}`;
             saveGame();
         }
 
         function addLog(msg) {
             let log = document.getElementById('log');
-            log.innerHTML = `<div>> ${msg}</div>` + log.innerHTML;
+            log.innerHTML = `<div style="margin-bottom:8px;">> ${msg}</div>` + log.innerHTML;
         }
 
         function scavenge(area) {
             addLog(`探索 ${area}...`);
-            if(state.weather === '沙塵暴') state.hp -= 5;
+            let roll = Math.random();
+            if(state.weather === '沙塵暴') { state.hp -= 5; addLog("沙塵暴肆虐，身體受損！"); }
+            
+            if (roll < 0.3) { state.backpack.push('罐頭'); addLog("發現罐頭！"); }
+            else if (roll < 0.6) { state.backpack.push('生肉'); addLog("找到一些生肉。"); }
+            else { addLog("這裡已經沒什麼東西了。"); }
+
+            state.hng -= 5; state.thr -= 5;
             updateUI();
         }
 
         function showBackpack() {
             document.getElementById('backpack-modal').style.display = 'flex';
             let list = document.getElementById('inventory-list'); list.innerHTML = '';
+            if (state.backpack.length === 0) { list.innerHTML = '<p style="color:#666;">背包空空如也</p>'; }
             state.backpack.forEach((item, i) => {
                 let btn = document.createElement('button'); btn.innerText = item;
                 btn.onclick = () => {
-                    if(item === '生肉') state.backpack[i] = '熟肉';
-                    else state.backpack.splice(i, 1);
+                    if(item === '生肉') { state.backpack[i] = '熟肉'; addLog("烹煮完成，生肉變成了熟肉。"); }
+                    else if(item === '罐頭') { state.hng += 20; state.backpack.splice(i, 1); addLog("吃掉了罐頭，飢餓度恢復。"); }
+                    else if(item === '熟肉') { state.hng += 30; state.backpack.splice(i, 1); addLog("吃掉了烤肉。"); }
                     updateUI(); closeModal();
                 };
                 list.appendChild(btn);
@@ -136,13 +268,7 @@
         }
 
         function closeModal() { document.getElementById('backpack-modal').style.display = 'none'; }
-        function rest() { state.hp += 10; updateUI(); addLog("恢復了部分體力。"); }
-        
-        setInterval(() => {
-            const w = ['晴天', '大雨', '沙塵暴'];
-            state.weather = w[Math.floor(Math.random()*3)];
-            updateUI();
-        }, 60000);
+        function rest() { state.hp += 10; state.hng -= 5; state.thr -= 5; updateUI(); addLog("你在營地中休息，恢復了一些體力。"); }
     </script>
 </body>
 </html>
