@@ -50,7 +50,6 @@
     <div id="modal"><div class="panel" style="width:400px; text-align:center;"><h3>背包內容</h3><div id="inv-list"></div><button onclick="toggleBackpack(false)">返回</button></div></div>
 
     <script>
-        // 補上 GAS 連結
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzhBvrnLbp-LoaWZIoE3PYij_aoj1s34xPrUkUj8GRdRs_B_afmftS1XrZx0LrzbgoN/exec";
         
         let state = { hp: 100, hng: 100, thr: 100, backpack: ['罐頭'], companions: [], affinity: 0 };
@@ -58,13 +57,13 @@
         function newGame() {
             document.getElementById('home-screen').style.display = 'none';
             document.getElementById('game-ui').style.display = 'grid';
-            addLog("亞當系統啟動，連線至遠端伺服器: " + GAS_URL.substring(0, 30) + "...");
+            addLog("亞當系統啟動。");
             updateUI();
         }
 
         function scavenge(area) {
-            // 降低機率至 8%
-            if(Math.random() < 0.08) { handleEncounter(); return; }
+            // 上調倖存者遭遇機率至 35%
+            if(Math.random() < 0.35) { handleEncounter(); return; }
             
             if(area === '森林') huntLogic();
             else {
@@ -108,7 +107,7 @@
         function rest() {
             state.hp = Math.min(100, state.hp + 15);
             state.hng = Math.max(0, state.hng - 5);
-            // 烹飪
+            // 烹飪機制
             if(state.backpack.includes('優質肉塊')) { state.backpack.splice(state.backpack.indexOf('優質肉塊'), 1); state.backpack.push('完美肉排'); }
             else if(state.backpack.includes('生肉')) { state.backpack.splice(state.backpack.indexOf('生肉'), 1); state.backpack.push('熟肉'); }
             addLog("休息與烹飪完畢。");
