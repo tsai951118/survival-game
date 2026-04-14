@@ -57,22 +57,20 @@
         function newGame() {
             document.getElementById('home-screen').style.display = 'none';
             document.getElementById('game-ui').style.display = 'grid';
-            setInterval(updateWeather, 60000); // 每分鐘切換天氣
-            addLog("亞當系統啟動，天氣模組已連線。");
+            setInterval(updateWeather, 60000);
             updateUI();
+            addLog("系統啟動。");
         }
 
         function updateWeather() {
             const types = ['晴天', '大雨', '沙塵暴'];
             state.weather = types[Math.floor(Math.random() * types.length)];
             document.getElementById('weather-val').innerText = state.weather;
-            addLog("天氣變更為: " + state.weather);
+            addLog("天氣變更: " + state.weather);
         }
 
-        function showModal(html) {
-            document.getElementById('modal-box').innerHTML = html;
-            document.getElementById('modal').style.display = 'flex';
-        }
+        function showModal(html) { document.getElementById('modal-box').innerHTML = html; document.getElementById('modal').style.display = 'flex'; }
+        function closeModal() { document.getElementById('modal').style.display = 'none'; }
 
         function scavenge(area) {
             if(Math.random() < 0.35) { handleEncounter(); return; }
@@ -82,10 +80,17 @@
                 state.backpack.push(drops[Math.floor(Math.random()*drops.length)]);
                 addLog("搜索 " + area + " 獲得物資。");
             }
-            // 天氣負面影響
+            state.hng = Math.max(0, state.hng - 5); state.thr = Math.max(0, state.thr - 5);
             if(state.weather === '沙塵暴') state.hp = Math.max(0, state.hp - 2);
-            state.hng = Math.max(0, state.hng - 5);
-            state.thr = Math.max(0, state.thr - 5);
+            updateUI();
+        }
+
+        function huntLogic() {
+            if(Math.random() > 0.7) {
+                if(Math.random() < 0.5) { state.backpack.push('優質肉塊'); addLog("擊殺肉食動物！"); }
+                else { state.hp = Math.max(0, state.hp - 20); addLog("遭肉食動物反擊！"); }
+            } else { state.backpack.push('生肉'); addLog("獵捕草食動物成功。"); }
+            state.hng = Math.max(0, state.hng - 10); state.thr = Math.max(0, state.thr - 10);
             updateUI();
         }
 
@@ -110,7 +115,8 @@
         
         function rest() {
             state.hp = Math.min(100, state.hp + 15);
-            if(state.weather === '大雨') state.thr = Math.min(100, state.thr + 20); // 大雨加水
+            state.hng = Math.max(0, state.hng - 5);
+            if(state.weather === '大雨') state.thr = Math.min(100, state.thr + 20);
             if(state.backpack.includes('優質肉塊')) { state.backpack.splice(state.backpack.indexOf('優質肉塊'), 1); state.backpack.push('完美肉排'); }
             else if(state.backpack.includes('生肉')) { state.backpack.splice(state.backpack.indexOf('生肉'), 1); state.backpack.push('熟肉'); }
             addLog("休息與烹飪完成。");
@@ -135,7 +141,6 @@
             closeModal(); updateUI();
         }
 
-        function closeModal() { document.getElementById('modal').style.display = 'none'; }
         function updateUI() {
             document.getElementById('hp-bar').style.width = Math.min(100, state.hp) + '%';
             document.getElementById('hng-bar').style.width = Math.min(100, state.hng) + '%';
