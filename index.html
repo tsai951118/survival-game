@@ -13,8 +13,9 @@
         .fill { height: 100%; width: 100%; transition: 0.3s; box-shadow: 0 0 10px var(--main); }
         button { background: rgba(0, 255, 65, 0.1); border: 1px solid var(--main); color: var(--main); padding: 10px; width: 100%; cursor: pointer; margin: 5px 0; text-transform: uppercase; }
         button:hover { background: var(--main); color: #000; box-shadow: 0 0 15px var(--main); }
-        #log { height: 350px; overflow-y: auto; font-size: 0.9em; border: 1px solid #222; padding: 10px; margin-bottom: 10px; }
+        #log { height: 320px; overflow-y: auto; font-size: 0.9em; border: 1px solid #222; padding: 10px; margin-bottom: 10px; }
         #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; align-items: center; justify-content: center; }
+        .modal-content { background: rgba(10, 20, 10, 0.9); border: 1px solid var(--main); padding: 30px; width: 400px; text-align: center; backdrop-filter: blur(10px); }
     </style>
 </head>
 <body>
@@ -33,7 +34,7 @@
             <button onclick="toggleBackpack(true)">開啟背包</button>
         </div>
         <div class="panel">
-            <h3>[ 日誌 | 好感: <span id="aff-val">0</span> ]</h3>
+            <h3>[ 日誌 | 天氣:<span id="weather-val">晴天</span> ]</h3>
             <div id="log"></div>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 5px;">
                 <button onclick="scavenge('醫院')">醫院</button><button onclick="scavenge('森林')">狩獵</button>
@@ -41,79 +42,100 @@
             </div>
         </div>
         <div class="panel">
-            <h3>[ 營地 ]</h3>
+            <h3>[ 營地 | 好感:<span id="aff-val">0</span> ]</h3>
             <p>成員: <span id="comp-count">0</span> 名</p>
             <button onclick="rest()">休息與烹飪</button>
         </div>
     </div>
 
-    <div id="modal"><div class="panel" style="width:400px; text-align:center;"><h3>背包內容</h3><div id="inv-list"></div><button onclick="toggleBackpack(false)">返回</button></div></div>
+    <div id="modal"><div class="modal-content" id="modal-box"></div></div>
 
     <script>
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzhBvrnLbp-LoaWZIoE3PYij_aoj1s34xPrUkUj8GRdRs_B_afmftS1XrZx0LrzbgoN/exec";
-        
-        let state = { hp: 100, hng: 100, thr: 100, backpack: ['罐頭'], companions: [], affinity: 0 };
+        let state = { hp: 100, hng: 100, thr: 100, backpack: ['罐頭'], companions: [], affinity: 0, weather: '晴天' };
 
         function newGame() {
             document.getElementById('home-screen').style.display = 'none';
             document.getElementById('game-ui').style.display = 'grid';
-            addLog("亞當系統啟動。");
+            setInterval(updateWeather, 60000); // 每分鐘切換天氣
+            addLog("亞當系統啟動，天氣模組已連線。");
             updateUI();
         }
 
+        function updateWeather() {
+            const types = ['晴天', '大雨', '沙塵暴'];
+            state.weather = types[Math.floor(Math.random() * types.length)];
+            document.getElementById('weather-val').innerText = state.weather;
+            addLog("天氣變更為: " + state.weather);
+        }
+
+        function showModal(html) {
+            document.getElementById('modal-box').innerHTML = html;
+            document.getElementById('modal').style.display = 'flex';
+        }
+
         function scavenge(area) {
-            // 上調倖存者遭遇機率至 35%
             if(Math.random() < 0.35) { handleEncounter(); return; }
-            
             if(area === '森林') huntLogic();
             else {
                 let drops = ['罐頭', '瓶裝水', '醫療包'];
                 state.backpack.push(drops[Math.floor(Math.random()*drops.length)]);
                 addLog("搜索 " + area + " 獲得物資。");
             }
+            // 天氣負面影響
+            if(state.weather === '沙塵暴') state.hp = Math.max(0, state.hp - 2);
             state.hng = Math.max(0, state.hng - 5);
             state.thr = Math.max(0, state.thr - 5);
             updateUI();
         }
 
-        function huntLogic() {
-            if(Math.random() > 0.7) {
-                if(Math.random() < 0.5) { state.backpack.push('優質肉塊'); addLog("擊殺肉食動物！"); }
-                else { state.hp = Math.max(0, state.hp - 20); addLog("遭到肉食動物反擊！"); }
-            } else {
-                state.backpack.push('生肉'); addLog("獵捕草食動物成功。");
-            }
+        function handleEncounter() {
+            let requested = ['罐頭', '瓶裝水'][Math.floor(Math.random()*2)];
+            showModal(`<h3>[ 遇見倖存者 ]</h3><p>對方要求: ${requested}</p>` + 
+                (state.backpack.includes(requested) ? `<button onclick="trade('${requested}')">交易</button>` : "<p>無法交易</p>") + 
+                `<button onclick="closeModal()">離開</button>`);
         }
 
-        function handleEncounter() {
-            addLog("!! 遇到倖存者 !!");
-            let choice = confirm("與倖存者進行物資交易以換取信任？");
-            if(choice && state.backpack.length > 0) {
-                state.backpack.splice(0, 1);
-                state.affinity++;
-                addLog("交易完成，好感度上升至 " + state.affinity);
-                if(state.affinity >= 3) {
-                    if(confirm("對方願意加入你的隊伍，接納他嗎？")) {
-                        state.companions.push("成員");
-                        addLog("新成員加入。");
-                    }
-                }
-            } else {
-                addLog("對方默默離開了。");
-            }
+        function trade(item) {
+            state.backpack.splice(state.backpack.indexOf(item), 1);
+            state.backpack.push(Math.random() > 0.5 ? '熟肉' : '醫療包');
+            state.affinity++;
+            addLog("交易成功。好感: " + state.affinity);
+            if(state.affinity >= 3) showModal(`<h3>[ 招募 ]</h3><p>對方信任你。</p><button onclick="recruit()">邀請加入</button>`);
+            else closeModal();
             updateUI();
         }
 
+        function recruit() { state.companions.push("成員"); state.affinity = 0; addLog("隊員加入。"); closeModal(); updateUI(); }
+        
         function rest() {
             state.hp = Math.min(100, state.hp + 15);
-            state.hng = Math.max(0, state.hng - 5);
-            // 烹飪機制
+            if(state.weather === '大雨') state.thr = Math.min(100, state.thr + 20); // 大雨加水
             if(state.backpack.includes('優質肉塊')) { state.backpack.splice(state.backpack.indexOf('優質肉塊'), 1); state.backpack.push('完美肉排'); }
             else if(state.backpack.includes('生肉')) { state.backpack.splice(state.backpack.indexOf('生肉'), 1); state.backpack.push('熟肉'); }
-            addLog("休息與烹飪完畢。");
+            addLog("休息與烹飪完成。");
             updateUI();
         }
 
+        function toggleBackpack(show) {
+            if(!show) { closeModal(); return; }
+            let html = `<h3>[ 背包 ]</h3>`;
+            state.backpack.forEach((item, idx) => html += `<button onclick="useItem(${idx})">使用 ${item}</button>`);
+            showModal(html + `<button onclick="closeModal()">返回</button>`);
+        }
+
+        function useItem(idx) {
+            let item = state.backpack[idx];
+            if(item === '完美肉排') state.hng = Math.min(100, state.hng + 120);
+            else if(item === '熟肉') state.hng = Math.min(100, state.hng + 60);
+            else if(item === '罐頭') state.hng = Math.min(100, state.hng + 30);
+            else if(item === '瓶裝水') state.thr = Math.min(100, state.thr + 40);
+            else if(item === '醫療包') state.hp = Math.min(100, state.hp + 50);
+            state.backpack.splice(idx, 1);
+            closeModal(); updateUI();
+        }
+
+        function closeModal() { document.getElementById('modal').style.display = 'none'; }
         function updateUI() {
             document.getElementById('hp-bar').style.width = Math.min(100, state.hp) + '%';
             document.getElementById('hng-bar').style.width = Math.min(100, state.hng) + '%';
@@ -121,26 +143,6 @@
             document.getElementById('comp-count').innerText = state.companions.length;
             document.getElementById('aff-val').innerText = state.affinity;
             localStorage.setItem('adam_save', JSON.stringify(state));
-        }
-
-        function toggleBackpack(show) {
-            document.getElementById('modal').style.display = show ? 'flex' : 'none';
-            if(show) {
-                let list = document.getElementById('inv-list'); list.innerHTML = "";
-                state.backpack.forEach((item, idx) => {
-                    let btn = document.createElement('button'); btn.innerText = "使用 " + item;
-                    btn.onclick = () => {
-                        if(item === '完美肉排') state.hng = Math.min(100, state.hng + 120);
-                        else if(item === '熟肉') state.hng = Math.min(100, state.hng + 60);
-                        else if(item === '罐頭') state.hng = Math.min(100, state.hng + 30);
-                        else if(item === '瓶裝水') state.thr = Math.min(100, state.thr + 40);
-                        else if(item === '醫療包') state.hp = Math.min(100, state.hp + 50);
-                        state.backpack.splice(idx, 1);
-                        toggleBackpack(false); updateUI();
-                    };
-                    list.appendChild(btn);
-                });
-            }
         }
         function addLog(msg) { document.getElementById('log').innerHTML = `<div>> ${msg}</div>` + document.getElementById('log').innerHTML; }
     </script>
