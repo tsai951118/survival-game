@@ -2,151 +2,147 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>廢土紀元 2026 - 末日生存</title>
+    <title>代號-亞當 (PROJECT ADAM) - 生存終端</title>
     <style>
-        :root { --main: #00ff41; --bg: #0a0a0a; --danger: #ff4444; }
-        body { background: var(--bg); color: var(--main); font-family: 'Courier New', monospace; padding: 20px; display: flex; justify-content: center; transition: background-color 0.8s ease; }
-        .game-grid { display: grid; grid-template-columns: 250px 500px 250px; gap: 15px; width: 1000px; }
-        .panel { border: 1px solid var(--main); padding: 15px; background: rgba(0,0,0,0.7); }
-        button { background: transparent; color: var(--main); border: 1px solid var(--main); padding: 10px; margin: 5px 0; cursor: pointer; width: 100%; text-transform: uppercase; }
+        :root { --main: #00ff41; --bg: #050505; --danger: #ff4444; --warn: #ffbb00; }
+        body { background: var(--bg); color: var(--main); font-family: 'Courier New', monospace; margin: 0; padding: 20px; overflow: hidden; }
+        
+        /* 終端機濾鏡 */
+        body::after { content: " "; position: fixed; top:0; left:0; width:100%; height:100%; background: linear-gradient(rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.2) 50%); background-size: 100% 4px; pointer-events: none; opacity: 0.15; }
+
+        #home-screen, #game-ui { position: fixed; width: 100%; height: 100%; top:0; left:0; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        #game-ui { display: none; padding: 20px; box-sizing: border-box; grid-template-columns: 280px 1fr 280px; grid-template-rows: 60px 1fr 120px; gap: 15px; }
+        
+        .panel { border: 1px solid var(--main); padding: 15px; background: rgba(0,0,0,0.9); }
+        button { background: transparent; color: var(--main); border: 1px solid var(--main); padding: 10px; margin: 5px; cursor: pointer; text-transform: uppercase; width: 100%; }
         button:hover { background: var(--main); color: var(--bg); }
-        .status-bar { height: 12px; background: #222; margin: 5px 0 15px 0; border: 1px solid #333; }
-        .fill { height: 100%; background: var(--main); transition: 0.3s; }
-        #log { height: 350px; overflow-y: auto; font-size: 0.9em; border-bottom: 1px solid #444; margin-bottom: 10px; padding: 5px; }
+        
+        .status-bar { height: 10px; background: #222; margin: 5px 0 10px 0; border: 1px solid #333; }
+        .fill { height: 100%; background: var(--main); transition: 0.5s; }
+        #log { height: 350px; overflow-y: auto; border: 1px solid #333; padding: 10px; margin: 10px 0; font-size: 0.9em; }
     </style>
 </head>
 <body>
 
-<div class="game-grid">
-    <div class="panel">
-        <h3>[ 生命體徵 ]</h3>
-        HP: <div class="status-bar"><div id="hp-bar" class="fill" style="width:100%"></div></div>
-        飢餓: <div class="status-bar"><div id="hng-bar" class="fill" style="width:100%"></div></div>
-        乾渴: <div class="status-bar"><div id="thr-bar" class="fill" style="width:100%"></div></div>
-        <p>狀態: <span id="status-msg">健康</span></p>
-        <button onclick="openBackpack()">[ 開啟背包 ]</button>
-        <p style="font-size:0.8em; color:#666;">注意：飢渴歸零將導致HP持續下降。</p>
+    <div id="home-screen">
+        <h1 style="text-shadow: 0 0 10px var(--main);">> [ 代號-亞當 : 啟動 ]</h1>
+        <button style="width:300px;" onclick="newGame()">新遊戲 (NEW MISSION)</button>
+        <button style="width:300px;" onclick="showLoadMenu()">讀取存檔 (LOAD DATA)</button>
+        <div id="load-menu" style="display:none; margin-top:20px;">
+            <h3>選擇存檔位：</h3>
+            <div id="save-list"></div>
+        </div>
     </div>
 
-    <div class="panel">
-        <h3>[ 搜尋區域 ]</h3>
-        <button onclick="scavenge('醫院')">醫院 (醫療物資)</button>
-        <button onclick="scavenge('森林')">森林 (狩獵/水)</button>
-        <button onclick="scavenge('超市')">廢棄超市 (食物)</button>
-        <button onclick="scavenge('停車場')">停車場 (雜項/燃料)</button>
-        <div id="log"></div>
+    <div id="game-ui">
+        <div class="panel" style="grid-column: 1/4; display:flex; justify-content:space-between; align-items:center;">
+            <div>> 系統: 代號-亞當 | <span id="weather-display">天氣: 晴天</span></div>
+            <div>STATUS: ONLINE</div>
+        </div>
+        <div class="panel">
+            <h3>[ 生理體徵 ]</h3>
+            HP: <div class="status-bar"><div id="hp-bar" class="fill" style="width:100%"></div></div>
+            飢餓: <div class="status-bar"><div id="hng-bar" class="fill" style="width:100%"></div></div>
+            乾渴: <div class="status-bar"><div id="thr-bar" class="fill" style="width:100%"></div></div>
+            <button onclick="showBackpack()">[ 打開背包 ]</button>
+        </div>
+        <div class="panel">
+            <h3>[ 環境行動 ]</h3>
+            <div id="log"></div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+                <button onclick="scavenge('醫院')">醫院</button><button onclick="scavenge('森林')">森林</button>
+                <button onclick="scavenge('超市')">超市</button><button onclick="scavenge('停車場')">停車場</button>
+            </div>
+        </div>
+        <div class="panel">
+            <h3>[ 營地管理 ]</h3>
+            <p id="comp-info">無同伴</p>
+            <button onclick="rest()">休息</button>
+            <button onclick="location.reload()">退出系統</button>
+        </div>
     </div>
 
-    <div class="panel">
-        <h3>[ 營地 ]</h3>
-        <div id="companion-info">無同伴</div>
-        <hr style="border:0; border-top:1px solid #333;">
-        <button onclick="rest()">休息恢復</button>
+    <div id="backpack-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); align-items:center; justify-content:center;">
+        <div class="panel" style="width:300px;"><h3>[ 背包物品 ]</h3><div id="inventory-list"></div><button onclick="closeModal()">關閉</button></div>
     </div>
-</div>
 
-<script>
-    // 請在此處填入你的 GAS 連結
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbzhBvrnLbp-LoaWZIoE3PYij_aoj1s34xPrUkUj8GRdRs_B_afmftS1XrZx0LrzbgoN/exec"; 
-    
-    let state = { hp: 100, hng: 100, thr: 100, wound: false, backpack: [], hasCompanion: false };
+    <script>
+        // 你的 GAS 網址已完成設定
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbzhBvrnLbp-LoaWZIoE3PYij_aoj1s34xPrUkUj8GRdRs_B_afmftS1XrZx0LrzbgoN/exec"; 
+        
+        let state = {}, currentSaveSlot = null;
 
-    function updateUI() {
-        state.hp = Math.min(100, Math.max(0, state.hp));
-        state.hng = Math.min(100, Math.max(0, state.hng));
-        state.thr = Math.min(100, Math.max(0, state.thr));
-        
-        document.getElementById('hp-bar').style.width = state.hp + '%';
-        document.getElementById('hng-bar').style.width = state.hng + '%';
-        document.getElementById('thr-bar').style.width = state.thr + '%';
-        
-        if (state.wound) {
-            state.hp -= 1;
-            document.getElementById('status-msg').innerText = "傷口惡化中！";
-        } else {
-            document.getElementById('status-msg').innerText = "健康";
+        function newGame() {
+            let saves = JSON.parse(localStorage.getItem('adam_saves') || '[]');
+            currentSaveSlot = saves.length;
+            state = { hp: 100, hng: 100, thr: 100, backpack: [], days: 0, weather: '晴天' };
+            startGame();
         }
-        
-        if(state.hp <= 0) alert("你已死亡。");
-    }
 
-    function addLog(msg) {
-        const log = document.getElementById('log');
-        log.innerHTML = `<div>> ${msg}</div>` + log.innerHTML;
-    }
-
-    function getEnvironmentText(area) {
-        const descs = {
-            '醫院': ["長廊深處傳來不明撞擊聲...", "空氣中瀰漫消毒水味。", "牆上的醫療海報泛黃脫落。"],
-            '森林': ["遠處傳來令人不安的咆哮。", "潮濕的腐葉味撲鼻而來。", "寂靜得只有你的腳步聲。"],
-            '超市': ["破碎的罐頭包裝滿地都是。", "空氣中有過期食品的酸味。", "昏暗的燈光閃爍不定。"],
-            '停車場': ["車輛佈滿乾涸血跡。", "風吹過鐵絲網的嘶嘶聲。", "這裡像是一個巨大的停屍間。"]
-        };
-        const options = descs[area];
-        return options[Math.floor(Math.random() * options.length)];
-    }
-
-    function scavenge(area) {
-        addLog(`探索 ${area}...`);
-        addLog(getEnvironmentText(area));
-        
-        const colors = {'醫院': '#1a2a2a', '森林': '#0a1a0a', '超市': '#2a2a1a', '停車場': '#1a1a1a'};
-        document.body.style.backgroundColor = colors[area];
-
-        if (Math.random() < 0.15) {
-            handleSurvivor();
-        } else {
-            if (area === '醫院' && Math.random() < 0.5) { state.backpack.push('醫療包'); addLog("找到醫療包！"); }
-            else if (area === '森林') { handleHunting(); }
-            else if (Math.random() < 0.4) { state.backpack.push('罐頭'); addLog("找到罐頭！"); }
-            else addLog("一無所獲。");
+        function showLoadMenu() {
+            document.getElementById('load-menu').style.display = 'block';
+            let saves = JSON.parse(localStorage.getItem('adam_saves') || '[]');
+            let list = document.getElementById('save-list'); list.innerHTML = '';
+            saves.forEach((data, i) => {
+                let btn = document.createElement('button'); btn.innerText = `存檔 #${i+1}`;
+                btn.onclick = () => { currentSaveSlot = i; state = data; startGame(); };
+                list.appendChild(btn);
+            });
         }
-        
-        state.hng -= 5; state.thr -= 5;
-        updateUI();
-    }
 
-    function handleHunting() {
-        let animal = Math.random() < 0.5 ? '肉食野獸' : '草食動物';
-        if (confirm(`遇到${animal}！狩獵？`)) {
-            if (animal === '肉食野獸') {
-                if(Math.random() < 0.7) { state.backpack.push('生肉'); addLog("戰勝野獸！獲得肉。"); }
-                else { state.hp -= 20; state.wound = true; addLog("被重創並受傷！"); }
-            } else {
-                if(Math.random() < 0.8) { state.backpack.push('生肉'); addLog("捕獲成功！"); }
-                else addLog("動物逃跑了。");
-            }
-        }
-    }
-
-    function handleSurvivor() {
-        if (confirm("遇到一名倖存者，邀請加入？")) {
-            if (Math.random() < 0.7) { state.hasCompanion = true; document.getElementById('companion-info').innerText = "倖存者同伴"; addLog("他同意加入！"); }
-            else addLog("他拒絕了你並轉身離開。");
-        } else {
-            if (Math.random() < 0.5) { state.backpack.push('罐頭'); addLog("掠奪成功！"); }
-            else { state.hp -= 20; addLog("攻擊失敗，遭受反擊！"); }
-        }
-    }
-
-    function rest() {
-        state.hp += 10;
-        addLog("休息恢復了一些體力。");
-        updateUI();
-    }
-
-    function openBackpack() {
-        let item = prompt("背包: " + state.backpack.join(", ") + "\n輸入名稱使用:");
-        if (state.backpack.includes(item)) {
-            if (item === '罐頭') state.hng += 30;
-            if (item === '醫療包') { state.hp += 30; state.wound = false; }
-            state.backpack.splice(state.backpack.indexOf(item), 1);
-            addLog(`使用了 ${item}`);
+        function startGame() {
+            document.getElementById('home-screen').style.display = 'none';
+            document.getElementById('game-ui').style.display = 'grid';
             updateUI();
         }
-    }
 
-    setInterval(updateUI, 5000);
-</script>
+        function saveGame() {
+            let saves = JSON.parse(localStorage.getItem('adam_saves') || '[]');
+            saves[currentSaveSlot] = state;
+            localStorage.setItem('adam_saves', JSON.stringify(saves));
+        }
+
+        function updateUI() {
+            document.getElementById('hp-bar').style.width = Math.min(100, state.hp) + '%';
+            document.getElementById('hng-bar').style.width = Math.min(100, state.hng) + '%';
+            document.getElementById('thr-bar').style.width = Math.min(100, state.thr) + '%';
+            document.getElementById('weather-display').innerText = `天氣: ${state.weather}`;
+            saveGame();
+        }
+
+        function addLog(msg) {
+            let log = document.getElementById('log');
+            log.innerHTML = `<div>> ${msg}</div>` + log.innerHTML;
+        }
+
+        function scavenge(area) {
+            addLog(`探索 ${area}...`);
+            if(state.weather === '沙塵暴') state.hp -= 5;
+            updateUI();
+        }
+
+        function showBackpack() {
+            document.getElementById('backpack-modal').style.display = 'flex';
+            let list = document.getElementById('inventory-list'); list.innerHTML = '';
+            state.backpack.forEach((item, i) => {
+                let btn = document.createElement('button'); btn.innerText = item;
+                btn.onclick = () => {
+                    if(item === '生肉') state.backpack[i] = '熟肉';
+                    else state.backpack.splice(i, 1);
+                    updateUI(); closeModal();
+                };
+                list.appendChild(btn);
+            });
+        }
+
+        function closeModal() { document.getElementById('backpack-modal').style.display = 'none'; }
+        function rest() { state.hp += 10; updateUI(); addLog("恢復了部分體力。"); }
+        
+        setInterval(() => {
+            const w = ['晴天', '大雨', '沙塵暴'];
+            state.weather = w[Math.floor(Math.random()*3)];
+            updateUI();
+        }, 60000);
+    </script>
 </body>
 </html>
