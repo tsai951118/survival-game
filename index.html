@@ -2,218 +2,144 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>代號-亞當 (PROJECT ADAM) - 修復版</title>
+    <title>代號-亞當 (PROJECT ADAM)</title>
     <style>
         :root { --main: #00ff41; --bg: #050505; --danger: #ff4444; --warn: #ffbb00; --water: #00ccff; }
-        body { background: #000; color: var(--main); font-family: 'Courier New', monospace; margin: 0; padding: 20px; overflow: hidden; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        
-        /* 視覺優化：動態掃描線 */
+        body { background: var(--bg); color: var(--main); font-family: 'Courier New', monospace; margin: 0; padding: 20px; overflow: hidden; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
         body::before { content: " "; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.03)); background-size: 100% 4px, 3px 100%; pointer-events: none; opacity: 0.15; z-index: 9999; }
 
-        /* 視覺優化：玻璃擬態 */
-        #game-ui { display: none; grid-template-columns: 320px 1fr 320px; grid-template-rows: 70px 1fr 150px; gap: 20px; width: 1300px; height: 85vh; padding: 20px; }
-        .panel { background: rgba(10, 20, 10, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(0, 255, 65, 0.4); padding: 20px; position: relative; box-shadow: 0 0 15px rgba(0, 255, 65, 0.1); }
+        #game-ui { display: none; grid-template-columns: 320px 1fr 320px; gap: 20px; width: 1200px; height: 80vh; }
+        .panel { background: rgba(10, 20, 10, 0.7); backdrop-filter: blur(10px); border: 1px solid var(--main); padding: 20px; position: relative; }
         
-        /* 狀態條與呼吸效果 */
-        @keyframes pulse { 0% { opacity: 0.7; } 50% { opacity: 1; } 100% { opacity: 0.7; } }
-        .bar-bg { height: 12px; background: #111; margin: 8px 0; border: 1px solid #333; overflow: hidden; }
-        .fill { height: 100%; width: 100%; transition: 0.5s; animation: pulse 2s infinite; box-shadow: 0 0 10px var(--main); }
+        .bar-bg { height: 10px; background: #111; margin: 5px 0 15px 0; border: 1px solid #333; }
+        .fill { height: 100%; width: 100%; transition: 0.3s; box-shadow: 0 0 10px var(--main); }
         
-        button { background: rgba(0, 255, 65, 0.1); border: 1px solid var(--main); color: var(--main); padding: 12px; margin: 5px 0; width: 100%; cursor: pointer; transition: 0.3s; text-transform: uppercase; }
-        button:hover { background: var(--main); color: #000; box-shadow: 0 0 20px var(--main); }
+        button { background: rgba(0, 255, 65, 0.1); border: 1px solid var(--main); color: var(--main); padding: 10px; width: 100%; cursor: pointer; margin: 5px 0; text-transform: uppercase; }
+        button:hover { background: var(--main); color: #000; box-shadow: 0 0 15px var(--main); }
         
-        #log { height: 320px; overflow-y: auto; font-size: 0.9em; border: 1px solid #222; padding: 10px; margin-bottom: 10px; text-align: left; scroll-behavior: smooth; }
-        
-        /* 背包彈窗 */
-        #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10000; align-items: center; justify-content: center; }
+        #log { height: 350px; overflow-y: auto; font-size: 0.9em; border: 1px solid #222; padding: 10px; margin-bottom: 10px; }
+        #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
 
     <div id="home-screen" style="text-align:center;">
-        <h1 style="font-size: 3.5em; text-shadow: 0 0 30px var(--main);">> [ PROJECT ADAM ]</h1>
-        <button style="width:300px;" onclick="newGame()">啟動生存程序</button>
+        <h1>[ 代號-亞當 : 最終生存終端 ]</h1>
+        <button style="width:300px;" onclick="newGame()">啟動程序</button>
+        <button style="width:300px;" onclick="loadGame()">載入進度</button>
     </div>
 
     <div id="game-ui">
-        <div class="panel" style="grid-column: 1/4; display:flex; justify-content:space-between; align-items:center;">
-            <div id="sys-title">> SYSTEM_ADAM: ONLINE</div>
-            <div id="weather-info" style="color:var(--warn)">天氣: 晴朗</div>
-        </div>
-
         <div class="panel">
-            <h3>[ 生理體徵 ]</h3>
-            HP
-            <div class="bar-bg"><div id="hp-bar" class="fill" style="background:var(--danger)"></div></div>
-            飢餓
-            <div class="bar-bg"><div id="hng-bar" class="fill" style="background:var(--warn)"></div></div>
-            乾渴
-            <div class="bar-bg"><div id="thr-bar" class="fill" style="background:var(--water)"></div></div>
-            <button onclick="toggleBackpack(true)" style="margin-top:20px;">[ 開啟背包 ]</button>
+            <h3>[ 生物體徵 ]</h3>
+            HP <div class="bar-bg"><div id="hp-bar" class="fill" style="background:var(--danger)"></div></div>
+            飢餓 <div class="bar-bg"><div id="hng-bar" class="fill" style="background:var(--warn)"></div></div>
+            乾渴 <div class="bar-bg"><div id="thr-bar" class="fill" style="background:var(--water)"></div></div>
+            <button onclick="toggleBackpack(true)">開啟背包</button>
         </div>
-
         <div class="panel">
-            <h3>[ 行動日誌 ]</h3>
+            <h3>[ 行動日誌 | 天氣: <span id="weather-text">晴天</span> ]</h3>
             <div id="log"></div>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                <button onclick="scavenge('醫院')">搜尋醫院</button><button onclick="scavenge('森林')">森林狩獵</button>
-                <button onclick="scavenge('超市')">搜尋超市</button><button onclick="scavenge('停車場')">搜尋停車場</button>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+                <button onclick="scavenge('醫院')">搜尋醫院</button>
+                <button onclick="scavenge('森林')">森林狩獵</button>
+                <button onclick="scavenge('超市')">搜尋超市</button>
+                <button onclick="scavenge('停車場')">停車場</button>
             </div>
         </div>
-
         <div class="panel">
-            <h3>[ 營地狀態 ]</h3>
-            <p>成員數量: <span id="comp-count" style="color:var(--main)">0</span></p>
-            <p>好感度: <span id="aff-val">0</span></p>
-            <button onclick="rest()">營地休息</button>
+            <h3>[ 營地管理 ]</h3>
+            <p>成員: <span id="comp-count">0</span> 名</p>
+            <button onclick="rest()">休息與烹飪</button>
         </div>
     </div>
 
-    <div id="modal">
-        <div class="panel" style="width:400px; text-align:center;">
-            <h3>[ 背包內容物 ]</h3>
-            <div id="inv-list" style="max-height: 300px; overflow-y: auto; margin: 20px 0;"></div>
-            <button onclick="toggleBackpack(false)">返回</button>
-        </div>
-    </div>
+    <div id="modal"><div class="panel" style="width:400px; text-align:center;"><h3>背包內容</h3><div id="inv-list"></div><button onclick="toggleBackpack(false)">返回</button></div></div>
 
     <script>
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzhBvrnLbp-LoaWZIoE3PYij_aoj1s34xPrUkUj8GRdRs_B_afmftS1XrZx0LrzbgoN/exec";
-        
-        let state = {
-            hp: 100, hng: 100, thr: 100,
-            backpack: ['罐頭', '瓶裝水'],
-            companions: [],
-            affinity: 0
-        };
+        let state = { hp: 100, hng: 100, thr: 100, backpack: ['罐頭'], companions: [], weather: '晴天' };
 
         function newGame() {
             document.getElementById('home-screen').style.display = 'none';
             document.getElementById('game-ui').style.display = 'grid';
-            addLog("亞當系統初始化完成。檢測到周邊有微弱生命信號。");
+            setInterval(weatherSystem, 60000);
             updateUI();
         }
 
-        function updateUI() {
-            document.getElementById('hp-bar').style.width = state.hp + '%';
-            document.getElementById('hng-bar').style.width = state.hng + '%';
-            document.getElementById('thr-bar').style.width = state.thr + '%';
-            document.getElementById('comp-count').innerText = state.companions.length;
-            document.getElementById('aff-val').innerText = state.affinity;
-        }
-
-        function addLog(msg) {
-            const log = document.getElementById('log');
-            log.innerHTML = `<div style="margin-bottom:8px; border-left:2px solid var(--main); padding-left:8px;">> ${msg}</div>` + log.innerHTML;
+        function weatherSystem() {
+            const w = ['晴天', '大雨', '沙塵暴'];
+            state.weather = w[Math.floor(Math.random()*3)];
+            document.getElementById('weather-text').innerText = state.weather;
         }
 
         function scavenge(area) {
-            if(state.hp <= 0) return addLog("你已虛脫，無法行動。");
-            
-            // 隨機遭遇
             if(Math.random() < 0.2) { handleEncounter(); return; }
-
-            addLog(`探索 ${area}...`);
-            if(area === '森林') {
-                huntLogic();
-            } else {
-                let drop = (area === '醫院') ? (Math.random() < 0.7 ? '醫療包' : null) : (Math.random() < 0.5 ? '罐頭' : '瓶裝水');
-                if(drop) {
-                    state.backpack.push(drop);
-                    addLog(`獲得物資: ${drop}`);
-                } else {
-                    addLog("搜尋無果。");
-                }
+            if(area === '森林') { huntLogic(); }
+            else {
+                let items = ['罐頭', '瓶裝水', '醫療包'];
+                let drop = items[Math.floor(Math.random()*items.length)];
+                state.backpack.push(drop);
+                addLog("搜尋到: " + drop);
             }
-            state.hng -= 7;
-            state.thr -= 10;
-            checkDeath();
-            updateUI();
+            state.hng -= 5; state.thr -= 5;
+            saveGame(); updateUI();
         }
 
         function huntLogic() {
-            let isCarnivore = Math.random() > 0.7;
-            if(!isCarnivore) {
-                if(Math.random() < 0.8) { state.backpack.push('生肉'); addLog("成功獵殺鹿，獲得生肉。"); }
-                else addLog("草食動物被驚動逃跑了。");
+            if(Math.random() > 0.7) {
+                if(Math.random() < 0.5) { state.backpack.push('優質肉塊'); addLog("擊殺肉食動物！"); }
+                else { state.hp -= 20; addLog("遭到肉食動物反擊！"); }
             } else {
-                if(Math.random() < 0.4) { state.backpack.push('優質肉塊'); addLog("反殺狼群！獲得優質肉塊。"); }
-                else { state.hp -= 25; addLog("遭到肉食動物撕咬！HP -25！"); }
+                state.backpack.push('生肉'); addLog("獵捕草食動物成功。");
             }
         }
 
         function handleEncounter() {
             addLog("!! 發現倖存者 !!");
-            if(confirm("分享一個罐頭換取信任？")) {
-                let idx = state.backpack.indexOf('罐頭');
-                if(idx > -1) {
-                    state.backpack.splice(idx, 1);
-                    state.affinity += 1;
-                    addLog("分享了食物。目前好感度: " + state.affinity);
-                    if(state.affinity >= 2 && confirm("對方想加入營地，接受嗎？")) {
-                        state.companions.push("成員");
-                        addLog("新成員已抵達營地！");
-                    }
-                } else {
-                    addLog("你身上沒有罐頭，對方失望離開。");
-                }
+            if(confirm("邀請加入營地？")) {
+                state.companions.push("成員");
+                addLog("成員加入！");
             }
-            updateUI();
         }
 
         function rest() {
             state.hp = Math.min(100, state.hp + 15);
-            state.hng -= 10;
-            state.thr -= 12;
-            addLog("回到營地休息...");
-            state.companions.forEach(() => {
-                if(Math.random() < 0.3) {
-                    state.backpack.push('瓶裝水');
-                    addLog("同伴在外帶回了瓶裝水。");
-                }
-            });
-            checkDeath();
-            updateUI();
+            // 烹飪機制
+            if(state.backpack.includes('優質肉塊')) { state.backpack.splice(state.backpack.indexOf('優質肉塊'), 1); state.backpack.push('完美肉排'); }
+            else if(state.backpack.includes('生肉')) { state.backpack.splice(state.backpack.indexOf('生肉'), 1); state.backpack.push('熟肉'); }
+            addLog("休息與烹飪完成。");
+            saveGame(); updateUI();
         }
 
-        // 背包功能核心
         function toggleBackpack(show) {
-            const modal = document.getElementById('modal');
-            const list = document.getElementById('inv-list');
-            modal.style.display = show ? 'flex' : 'none';
-            
+            document.getElementById('modal').style.display = show ? 'flex' : 'none';
             if(show) {
-                list.innerHTML = "";
-                if(state.backpack.length === 0) list.innerHTML = "背包是空的。";
-                state.backpack.forEach((item, index) => {
-                    let btn = document.createElement('button');
-                    btn.innerText = `使用 ${item}`;
-                    btn.onclick = () => useItem(index);
+                let list = document.getElementById('inv-list'); list.innerHTML = "";
+                state.backpack.forEach((item, idx) => {
+                    let btn = document.createElement('button'); btn.innerText = "使用 " + item;
+                    btn.onclick = () => {
+                        if(item === '完美肉排') state.hng += 120;
+                        else if(item === '熟肉') state.hng += 60;
+                        else if(item === '罐頭') state.hng += 30;
+                        else if(item === '瓶裝水') state.thr += 40;
+                        state.backpack.splice(idx, 1);
+                        toggleBackpack(false); updateUI();
+                    };
                     list.appendChild(btn);
                 });
             }
         }
 
-        function useItem(index) {
-            let item = state.backpack[index];
-            if(item === '罐頭') { state.hng = Math.min(100, state.hng + 30); addLog("吃掉罐頭，飢餓減輕。"); }
-            else if(item === '瓶裝水') { state.thr = Math.min(100, state.thr + 40); addLog("飲用瓶裝水，解渴了。"); }
-            else if(item === '醫療包') { state.hp = Math.min(100, state.hp + 50); addLog("包紮傷口，HP 恢復。"); }
-            else if(item === '生肉') { state.hng = Math.min(100, state.hng + 15); state.hp -= 5; addLog("強行吃下生肉，感到反胃。"); }
-            else if(item === '優質肉塊') { state.hng = Math.min(100, state.hng + 45); addLog("享用了優質肉塊。"); }
-            
-            state.backpack.splice(index, 1);
-            toggleBackpack(true); // 刷新背包列表
-            updateUI();
+        function saveGame() { localStorage.setItem('adam_save', JSON.stringify(state)); }
+        function loadGame() { state = JSON.parse(localStorage.getItem('adam_save')); newGame(); }
+        function updateUI() {
+            document.getElementById('hp-bar').style.width = state.hp + '%';
+            document.getElementById('hng-bar').style.width = state.hng + '%';
+            document.getElementById('thr-bar').style.width = state.thr + '%';
+            document.getElementById('comp-count').innerText = state.companions.length;
         }
-
-        function checkDeath() {
-            if(state.hng <= 0 || state.thr <= 0) state.hp -= 10;
-            if(state.hp <= 0) {
-                alert("亞當系統生命體徵停止。任務失敗。");
-                location.reload();
-            }
-        }
+        function addLog(msg) { document.getElementById('log').innerHTML = `<div>> ${msg}</div>` + document.getElementById('log').innerHTML; }
     </script>
 </body>
 </html>
