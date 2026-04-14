@@ -2,126 +2,151 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>廢土生存 2026 - Wasteland Survival</title>
+    <title>廢土紀元 2026 - 末日生存</title>
     <style>
-        :root { --main-color: #00ff41; --bg-color: #0a0a0a; --border-color: #444; --danger-color: #ff4444; --warn-color: #ffbb00; }
-        body { background-color: var(--bg-color); color: var(--main-color); font-family: 'Courier New', Courier, monospace; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; text-shadow: 0 0 5px var(--main-color); }
-        .cr { text-transform: uppercase; }
-        .game-container { border: 2px solid var(--border-color); width: 1000px; height: 600px; display: grid; grid-template-columns: 250px 1fr; grid-template-rows: 60px 1fr 100px; gap: 10px; padding: 10px; box-shadow: 0 0 20px rgba(0,255,65,0.2); }
-        .box { border: 1px solid var(--border-color); padding: 10px; overflow: hidden; }
-        .header { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--main-color); }
-        .sidebar { grid-row: 2 / -1; display: flex; flex-direction: column; gap: 15px; }
-        .bar-bg { background: #222; height: 10px; border: 1px solid #555; width: 100%; margin-bottom: 10px; }
-        .bar-fill { height: 100%; transition: width 0.3s; }
-        #hp-bar { background-color: var(--danger-color); }
-        #hunger-bar { background-color: var(--warn-color); }
-        #thirst-bar { background-color: #4444ff; }
-        .main-content { grid-column: 2; grid-row: 2; display: flex; flex-direction: column; background: rgba(0,0,0,0.5); }
-        #event-log { flex: 1; overflow-y: auto; padding: 10px; font-size: 0.95em; line-height: 1.6; display: flex; flex-direction: column-reverse; }
-        .log-entry { margin-bottom: 8px; padding-left: 10px; border-left: 2px solid transparent; }
-        .log-entry.system { border-left-color: var(--main-color); color: #aaa; }
-        .log-entry.reward { border-left-color: #00ff00; color: #fff; background: rgba(0,255,0,0.1); }
-        .log-entry.penalty { border-left-color: var(--danger-color); color: var(--danger-color); background: rgba(255,0,0,0.1); }
-        .control-panel { grid-column: 2; grid-row: 3; display: flex; justify-content: center; align-items: center; gap: 20px; }
-        button { background: transparent; color: var(--main-color); border: 2px solid var(--main-color); padding: 10px 30px; font-family: inherit; font-size: 1.1em; cursor: pointer; }
-        button:hover { background: var(--main-color); color: var(--bg-color); }
-        #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); display: flex; justify-content: center; align-items: center; z-index: 100; flex-direction: column; }
+        :root { --main: #00ff41; --bg: #0a0a0a; --danger: #ff4444; }
+        body { background: var(--bg); color: var(--main); font-family: 'Courier New', monospace; padding: 20px; display: flex; justify-content: center; transition: background-color 0.8s ease; }
+        .game-grid { display: grid; grid-template-columns: 250px 500px 250px; gap: 15px; width: 1000px; }
+        .panel { border: 1px solid var(--main); padding: 15px; background: rgba(0,0,0,0.7); }
+        button { background: transparent; color: var(--main); border: 1px solid var(--main); padding: 10px; margin: 5px 0; cursor: pointer; width: 100%; text-transform: uppercase; }
+        button:hover { background: var(--main); color: var(--bg); }
+        .status-bar { height: 12px; background: #222; margin: 5px 0 15px 0; border: 1px solid #333; }
+        .fill { height: 100%; background: var(--main); transition: 0.3s; }
+        #log { height: 350px; overflow-y: auto; font-size: 0.9em; border-bottom: 1px solid #444; margin-bottom: 10px; padding: 5px; }
     </style>
 </head>
 <body>
 
-    <div id="login-overlay">
-        <div class="login-box">
-            <h2>[ 系統存取驗證 ]</h2>
-            <input type="text" id="user" placeholder="使用者代碼" value="player1"><br>
-            <input type="password" id="pass" placeholder="安全密碼" value="12345"><br>
-            <button onclick="login()">初始化連結</button>
-        </div>
+<div class="game-grid">
+    <div class="panel">
+        <h3>[ 生命體徵 ]</h3>
+        HP: <div class="status-bar"><div id="hp-bar" class="fill" style="width:100%"></div></div>
+        飢餓: <div class="status-bar"><div id="hng-bar" class="fill" style="width:100%"></div></div>
+        乾渴: <div class="status-bar"><div id="thr-bar" class="fill" style="width:100%"></div></div>
+        <p>狀態: <span id="status-msg">健康</span></p>
+        <button onclick="openBackpack()">[ 開啟背包 ]</button>
+        <p style="font-size:0.8em; color:#666;">注意：飢渴歸零將導致HP持續下降。</p>
     </div>
 
-    <div class="game-container">
-        <div class="header">
-            <div>WASTELAND SURVIVAL</div>
-            <div>[ 天數: <span id="days">0</span> ]</div>
-        </div>
-
-        <div class="box sidebar">
-            <h3>生命體徵</h3>
-            <div>HP: <span id="hp-text">100/100</span><div class="bar-bg"><div class="bar-fill" id="hp-bar" style="width: 100%"></div></div></div>
-            <div>飢餓: <span id="hunger-text">100/100</span><div class="bar-bg"><div class="bar-fill" id="hunger-bar" style="width: 100%"></div></div></div>
-            <div>乾渴: <span id="thirst-text">100/100</span><div class="bar-bg"><div class="bar-fill" id="thirst-bar" style="width: 100%"></div></div></div>
-            <div id="companion-status" style="color:var(--warn-color);"></div>
-        </div>
-
-        <div class="box main-content">
-            <div id="event-log"><div class="log-entry system">系統就緒。</div></div>
-        </div>
-
-        <div class="box control-panel">
-            <button onclick="action('scavenge')">野外搜刮</button>
-            <button onclick="action('rest')">營地休息</button>
-        </div>
+    <div class="panel">
+        <h3>[ 搜尋區域 ]</h3>
+        <button onclick="scavenge('醫院')">醫院 (醫療物資)</button>
+        <button onclick="scavenge('森林')">森林 (狩獵/水)</button>
+        <button onclick="scavenge('超市')">廢棄超市 (食物)</button>
+        <button onclick="scavenge('停車場')">停車場 (雜項/燃料)</button>
+        <div id="log"></div>
     </div>
 
-    <script>
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbzhBvrnLbp-LoaWZIoE3PYij_aoj1s34xPrUkUj8GRdRs_B_afmftS1XrZx0LrzbgoN/exec"; 
-        let days = 0, hp = 100, hunger = 100, thirst = 100, hasCompanion = false, userName = "";
+    <div class="panel">
+        <h3>[ 營地 ]</h3>
+        <div id="companion-info">無同伴</div>
+        <hr style="border:0; border-top:1px solid #333;">
+        <button onclick="rest()">休息恢復</button>
+    </div>
+</div>
 
-        function addLog(text, type = 'system') {
-            const entry = document.createElement('div');
-            entry.className = `log-entry ${type}`;
-            entry.innerText = `[第 ${days} 天] ${text}`;
-            document.getElementById('event-log').appendChild(entry);
+<script>
+    // 請在此處填入你的 GAS 連結
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzhBvrnLbp-LoaWZIoE3PYij_aoj1s34xPrUkUj8GRdRs_B_afmftS1XrZx0LrzbgoN/exec"; 
+    
+    let state = { hp: 100, hng: 100, thr: 100, wound: false, backpack: [], hasCompanion: false };
+
+    function updateUI() {
+        state.hp = Math.min(100, Math.max(0, state.hp));
+        state.hng = Math.min(100, Math.max(0, state.hng));
+        state.thr = Math.min(100, Math.max(0, state.thr));
+        
+        document.getElementById('hp-bar').style.width = state.hp + '%';
+        document.getElementById('hng-bar').style.width = state.hng + '%';
+        document.getElementById('thr-bar').style.width = state.thr + '%';
+        
+        if (state.wound) {
+            state.hp -= 1;
+            document.getElementById('status-msg').innerText = "傷口惡化中！";
+        } else {
+            document.getElementById('status-msg').innerText = "健康";
         }
+        
+        if(state.hp <= 0) alert("你已死亡。");
+    }
 
-        function updateUI() {
-            document.getElementById('days').innerText = days;
-            document.getElementById('hp-text').innerText = `${hp}/100`;
-            document.getElementById('hunger-text').innerText = `${hunger}/100`;
-            document.getElementById('thirst-text').innerText = `${thirst}/100`;
-            document.getElementById('hp-bar').style.width = `${hp}%`;
-            document.getElementById('hunger-bar').style.width = `${hunger}%`;
-            document.getElementById('thirst-bar').style.width = `${thirst}%`;
-            document.getElementById('companion-status').innerText = hasCompanion ? "[同伴已加入]" : "";
+    function addLog(msg) {
+        const log = document.getElementById('log');
+        log.innerHTML = `<div>> ${msg}</div>` + log.innerHTML;
+    }
+
+    function getEnvironmentText(area) {
+        const descs = {
+            '醫院': ["長廊深處傳來不明撞擊聲...", "空氣中瀰漫消毒水味。", "牆上的醫療海報泛黃脫落。"],
+            '森林': ["遠處傳來令人不安的咆哮。", "潮濕的腐葉味撲鼻而來。", "寂靜得只有你的腳步聲。"],
+            '超市': ["破碎的罐頭包裝滿地都是。", "空氣中有過期食品的酸味。", "昏暗的燈光閃爍不定。"],
+            '停車場': ["車輛佈滿乾涸血跡。", "風吹過鐵絲網的嘶嘶聲。", "這裡像是一個巨大的停屍間。"]
+        };
+        const options = descs[area];
+        return options[Math.floor(Math.random() * options.length)];
+    }
+
+    function scavenge(area) {
+        addLog(`探索 ${area}...`);
+        addLog(getEnvironmentText(area));
+        
+        const colors = {'醫院': '#1a2a2a', '森林': '#0a1a0a', '超市': '#2a2a1a', '停車場': '#1a1a1a'};
+        document.body.style.backgroundColor = colors[area];
+
+        if (Math.random() < 0.15) {
+            handleSurvivor();
+        } else {
+            if (area === '醫院' && Math.random() < 0.5) { state.backpack.push('醫療包'); addLog("找到醫療包！"); }
+            else if (area === '森林') { handleHunting(); }
+            else if (Math.random() < 0.4) { state.backpack.push('罐頭'); addLog("找到罐頭！"); }
+            else addLog("一無所獲。");
         }
+        
+        state.hng -= 5; state.thr -= 5;
+        updateUI();
+    }
 
-        async function login() {
-            userName = document.getElementById('user').value;
-            document.getElementById('login-overlay').style.display = 'none';
+    function handleHunting() {
+        let animal = Math.random() < 0.5 ? '肉食野獸' : '草食動物';
+        if (confirm(`遇到${animal}！狩獵？`)) {
+            if (animal === '肉食野獸') {
+                if(Math.random() < 0.7) { state.backpack.push('生肉'); addLog("戰勝野獸！獲得肉。"); }
+                else { state.hp -= 20; state.wound = true; addLog("被重創並受傷！"); }
+            } else {
+                if(Math.random() < 0.8) { state.backpack.push('生肉'); addLog("捕獲成功！"); }
+                else addLog("動物逃跑了。");
+            }
+        }
+    }
+
+    function handleSurvivor() {
+        if (confirm("遇到一名倖存者，邀請加入？")) {
+            if (Math.random() < 0.7) { state.hasCompanion = true; document.getElementById('companion-info').innerText = "倖存者同伴"; addLog("他同意加入！"); }
+            else addLog("他拒絕了你並轉身離開。");
+        } else {
+            if (Math.random() < 0.5) { state.backpack.push('罐頭'); addLog("掠奪成功！"); }
+            else { state.hp -= 20; addLog("攻擊失敗，遭受反擊！"); }
+        }
+    }
+
+    function rest() {
+        state.hp += 10;
+        addLog("休息恢復了一些體力。");
+        updateUI();
+    }
+
+    function openBackpack() {
+        let item = prompt("背包: " + state.backpack.join(", ") + "\n輸入名稱使用:");
+        if (state.backpack.includes(item)) {
+            if (item === '罐頭') state.hng += 30;
+            if (item === '醫療包') { state.hp += 30; state.wound = false; }
+            state.backpack.splice(state.backpack.indexOf(item), 1);
+            addLog(`使用了 ${item}`);
             updateUI();
         }
+    }
 
-        async function action(type) {
-            days++;
-            if (type === 'scavenge') {
-                if (Math.random() < 0.3) {
-                    handleSurvivorEncounter();
-                } else if (Math.random() < 0.6) {
-                    hunger += 30; thirst += 30;
-                    addLog("你搜刮到了物資！(HNG/THR +30)", 'reward');
-                } else {
-                    addLog("這次搜刮一無所獲。");
-                }
-            } else {
-                hp += 15;
-                if(hasCompanion) hunger += 10;
-                addLog("休息恢復了生命。");
-            }
-            hunger -= 15; thirst -= 15;
-            updateUI();
-        }
-
-        function handleSurvivorEncounter() {
-            let choice = confirm("遇到倖存者！[確定]邀請 [取消]攻擊");
-            if (choice) {
-                if (Math.random() < 0.7) { hasCompanion = true; addLog("他加入了你！", 'reward'); }
-                else addLog("他拒絕了你。");
-            } else {
-                if (Math.random() < 0.5) { hunger += 30; addLog("掠奪成功！", 'reward'); }
-                else { hp -= 30; addLog("反擊受傷！", 'penalty'); }
-            }
-        }
-    </script>
+    setInterval(updateUI, 5000);
+</script>
 </body>
 </html>
